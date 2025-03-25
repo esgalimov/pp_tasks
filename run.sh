@@ -2,6 +2,11 @@ cd build
 make
 cd ..
 
-mpirun -n 1 ./build/cond_counter  0.001 30 0.01 10 > out.txt
+rm -rf out
+
+mkdir out
+
+mpirun -n 3 ./build/cond_counter  0.001 50 0.01 12
+
 
 python3 draw.py

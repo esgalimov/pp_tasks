@@ -1,15 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pathlib
+
+p = pathlib.Path(__file__).parent / "out"
 
 lines = []
 
-with open("./out.txt", "r") as file:
-    lines = file.readlines()
+for name in p.iterdir():
+    with open(str(name), "r") as file:
+        new_lines = file.readlines()
+        if lines == []:
+            lines = new_lines
+            continue
+
+        for i in range(len(lines)):
+            lines[i] += new_lines[i] 
 
 for i in range(len(lines)):
     lines[i] = [float(x) for x in lines[i].split()]
 
-print(lines)
+#print(lines)
 
 k = [i for i in range(len(lines[0]))]
 
