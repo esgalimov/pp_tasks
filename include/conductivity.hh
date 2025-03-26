@@ -157,7 +157,7 @@ public:
         heterogeneity.resize(n_tau++);
         points.resize(n_tau);
 
-        n_h = (rank == size - 1 && n_h % size != 0) ? n_h % size : n_h / size;
+        n_h = (rank == size - 1) ? n_h / size + n_h % size : n_h / size;
         
         for (auto& vec : points)        vec.resize(n_h);
         for (auto& vec : heterogeneity) vec.resize(n_h);
@@ -166,6 +166,11 @@ public:
         get_coord_initial_func();
         get_heterogeneity_func();
     }
+
+    thermal_conductivity_solver_t(const thermal_conductivity_solver_t&)            = delete;
+    thermal_conductivity_solver_t(thermal_conductivity_solver_t&&)                 = delete;
+    thermal_conductivity_solver_t& operator=(const thermal_conductivity_solver_t&) = delete;
+    thermal_conductivity_solver_t& operator=(thermal_conductivity_solver_t&&)      = delete;
 
     ~thermal_conductivity_solver_t() {
         MPI_Finalize();
