@@ -8,12 +8,14 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 constexpr double EPS = 0.00000001;
 constexpr int ALIGNMENT = 12;
 constexpr int DEFAULT_TAG     = 0;
 
 
+namespace thermal_conductivity {
 class thermal_conductivity_solver_t final {
 
     int rank = 0;
@@ -130,39 +132,14 @@ class thermal_conductivity_solver_t final {
         #endif
     }
 
-public:
-
-    void process_steps() {
-        if (size == 1) process_on_single_node();
-        else           process_on_multiple_nodes();
-        
-    }
-
-    void dump_res(std::ostream& os) const {
-        #ifdef DEBUG
-        for (auto& vec : points) {
-            for (auto& pnt : vec) 
-                os << std::setw(ALIGNMENT) << pnt << " ";
-            os << std::endl;
-        }
-        #else
-        for (auto& pnt : points[0]) 
-            os << std::setw(ALIGNMENT) << pnt << " ";
-        os << std::endl;
-        #endif
-    }
-
-    int get_rank() const { return rank; }
-    int get_size() const { return size; }
-
-    thermal_conductivity_solver_t(int argc, char* argv[]) {
+    void init_all(int argc, char* argv[]) {
         if (argc == 5) {
             tau       = std::stod(argv[1]);
             n_tau_all = std::stol(argv[2]);
             h         = std::stod(argv[3]);
             n_h_all   = std::stol(argv[4]);
         }
-        else throw std::runtime_error("Must be 5 arguments: tau, n_tau, h, n_h.");
+        else throw std::runtime_error("Must be 4 arguments: tau, n_tau_all, h, n_h_all.");
      
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -174,7 +151,7 @@ public:
             throw std::runtime_error("tau, h must be bigger than EPS = 0.00000001");
 
         #ifdef DEBUG
-        points.resize(++n_tau);
+        points.resize(++n_tau_all);
         #else
         points.resize(2);
         #endif
@@ -188,15 +165,66 @@ public:
         get_coord_initial_func();
     }
 
+    void process_steps_private() {
+        if (size == 1) process_on_single_node();
+        else           process_on_multiple_nodes();
+        
+    }
+
+    void dump_res_private(std::ostream& os) const {
+        #ifdef DEBUG
+        for (auto& vec : points) {
+            for (auto& pnt : vec) 
+                os << std::setw(ALIGNMENT) << pnt << " ";
+            os << std::endl;
+        }
+        #else
+        for (auto& pnt : points[0]) 
+            os << std::setw(ALIGNMENT) << pnt << " ";
+        os << std::endl;
+        #endif
+    }
+
+    thermal_conductivity_solver_t() {}
+
+
+public:
+
+    static thermal_conductivity_solver_t& get_instance() {
+        static thermal_conductivity_solver_t instance;
+        return instance;
+    }
+
+    static void init(int argc, char* argv[]) {
+        if (get_instance().size != 0)
+            throw std::runtime_error("Multiple init thermal_conductivity_solver_t");
+
+        get_instance().init_all(argc, argv);
+    }
+    
+    static void process_steps() {
+        get_instance().process_steps_private();
+        
+    }
+
+    static void dump_res(std::ostream& os) {
+        get_instance().dump_res_private(os);
+    }
+
+    
+    static int get_rank() { return get_instance().rank; }
+    static int get_size() { return get_instance().size; }
+
+
     thermal_conductivity_solver_t(const thermal_conductivity_solver_t&)            = delete;
     thermal_conductivity_solver_t(thermal_conductivity_solver_t&&)                 = delete;
     thermal_conductivity_solver_t& operator=(const thermal_conductivity_solver_t&) = delete;
     thermal_conductivity_solver_t& operator=(thermal_conductivity_solver_t&&)      = delete;
 
     ~thermal_conductivity_solver_t() {
-        MPI_Finalize();
+        if (size != 0) MPI_Finalize();
     }
 };
 
-
+} // <  ---- namespace thermal_conductivity
 #endif

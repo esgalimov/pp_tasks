@@ -3,18 +3,20 @@
 #include <string>
 #include <filesystem>
 
+namespace tc = thermal_conductivity;
+
 int main(int argc, char* argv[]) try {
-    thermal_conductivity_solver_t conduc(argc, argv);
+    tc::thermal_conductivity_solver_t::init(argc, argv);
 
     auto file_folder = std::filesystem::absolute(__FILE__).parent_path();
+    int rank = tc::thermal_conductivity_solver_t::get_rank();
 
-    std::string output_filename = file_folder.string() + "/out/node_" + std::to_string(conduc.get_rank()) + ".txt";
+    std::string output_filename = file_folder.string() + "/out/node_" + std::to_string(rank) + ".txt";
 
     std::ofstream fout(output_filename);
-
-    conduc.process_steps();
-
-    conduc.dump_res(fout);
+    
+    tc::thermal_conductivity_solver_t::process_steps();
+    tc::thermal_conductivity_solver_t::dump_res(fout);
 
     return 0;
 }
