@@ -22,16 +22,16 @@ class thermal_conductivity_solver_t final {
     double tau = 0.0;
     double   h = 0.0;
 
-    long n_tau = 0;
-    long n_h   = 0;
+    long n_tau     = 0;
+    long n_tau_all = 0;
+    long n_h       = 0;
+    long n_h_all   = 0;
 
     using vec_vec_double_t = typename std::vector<std::vector<double>>;
 
     vec_vec_double_t points;
-    vec_vec_double_t heterogeneity;
 
     int curr_step = 1;
-
 
     void get_time_initial_func() {
         if (rank == 0)
@@ -48,17 +48,21 @@ class thermal_conductivity_solver_t final {
     }
 
     void process_on_single_node() {
-        while (curr_step < n_tau) {
+        while (n_tau > 1) {
             process_single_step();
-            curr_step++;
+            after_single_step();
         }
+    }
+
+    double get_curr_heterogeneity(int i) {
+        return 0;
     }
 
     void process_single_iter(double prev, double next, int i) {
         double deriv1 = (prev - next) * tau / (2 * h);
         double deriv2 = (next - 2 * points[curr_step - 1][i] + prev) * tau * tau / (2 * h * h);
 
-        points[curr_step][i] = points[curr_step - 1][i] + tau * heterogeneity[curr_step - 1][i] + deriv1 + deriv2;
+        points[curr_step][i] = points[curr_step - 1][i] + tau * get_curr_heterogeneity(i) + deriv1 + deriv2;
     }
 
     void process_single_step_on_non_outermost_node() {
@@ -108,13 +112,22 @@ class thermal_conductivity_solver_t final {
     }   
 
     void process_on_multiple_nodes() {
-        while (curr_step < n_tau) {
+        while (n_tau > 1) {
             if (rank != 0 && rank != size - 1) process_single_step_on_non_outermost_node();
             else if (rank == 0)                process_single_step_on_outermost_node(n_h - 1);
             else                               process_single_step_on_outermost_node(0);
- 
-            curr_step++;
+
+            after_single_step();
         }
+    }
+
+    void after_single_step() {
+        n_tau--;
+        #ifdef DEBUG
+            curr_step++;
+        #else
+            points[0].swap(points[1]);
+        #endif
     }
 
 public:
@@ -126,11 +139,17 @@ public:
     }
 
     void dump_res(std::ostream& os) const {
+        #ifdef DEBUG
         for (auto& vec : points) {
             for (auto& pnt : vec) 
                 os << std::setw(ALIGNMENT) << pnt << " ";
             os << std::endl;
         }
+        #else
+        for (auto& pnt : points[0]) 
+            os << std::setw(ALIGNMENT) << pnt << " ";
+        os << std::endl;
+        #endif
     }
 
     int get_rank() const { return rank; }
@@ -138,33 +157,35 @@ public:
 
     thermal_conductivity_solver_t(int argc, char* argv[]) {
         if (argc == 5) {
-            tau   = std::stod(argv[1]);
-            n_tau = std::stol(argv[2]);
-            h     = std::stod(argv[3]);
-            n_h   = std::stol(argv[4]);
+            tau       = std::stod(argv[1]);
+            n_tau_all = std::stol(argv[2]);
+            h         = std::stod(argv[3]);
+            n_h_all   = std::stol(argv[4]);
         }
-        else throw std::runtime_error("Must be 4 arguments: tau, n_tau, h, n_h.");
+        else throw std::runtime_error("Must be 5 arguments: tau, n_tau, h, n_h.");
      
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-        if (n_tau < 1 || n_h / size < 4) 
+        if (n_tau_all < 1 || n_h_all / size < 4) 
             throw std::runtime_error("n_h / size must be bigger than 4, n_tau must be bigger than 0");
         if (tau < EPS || h < EPS)
             throw std::runtime_error("tau, h must be bigger than EPS = 0.00000001");
 
-        heterogeneity.resize(n_tau++);
-        points.resize(n_tau);
-
-        n_h = (rank == size - 1) ? n_h / size + n_h % size : n_h / size;
+        #ifdef DEBUG
+        points.resize(++n_tau);
+        #else
+        points.resize(2);
+        #endif
+  
+        n_tau = n_tau_all;
+        n_h = (rank == size - 1) ? n_h_all / size + n_h_all % size : n_h_all / size;
         
-        for (auto& vec : points)        vec.resize(n_h);
-        for (auto& vec : heterogeneity) vec.resize(n_h);
+        for (auto& vec : points) vec.resize(n_h);
 
         get_time_initial_func();
         get_coord_initial_func();
-        get_heterogeneity_func();
     }
 
     thermal_conductivity_solver_t(const thermal_conductivity_solver_t&)            = delete;
