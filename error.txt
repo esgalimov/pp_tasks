@@ -1,0 +1,77 @@
+[ 15%] Built target pi_counter
+Consolidate compiler generated dependencies of target cond_counter
+[ 23%] Building CXX object CMakeFiles/cond_counter.dir/cond_main.cc.o
+[ 30%] Linking CXX executable cond_counter
+[100%] Built target cond_counter
+Something wrong: ERROR: time_initial_func: Must be only one var - t, or const
+
+Something wrong: ERROR: time_initial_func: Must be only one var - t, or const
+
+Something wrong: ERROR: time_initial_func: Must be only one var - t, or const
+
+Something wrong: ERROR: time_initial_func: Must be only one var - t, or const
+
+[esgalimov-pc:24941] *** Process received signal ***
+[esgalimov-pc:24941] Signal: Segmentation fault (11)
+[esgalimov-pc:24941] Signal code: Address not mapped (1)
+[esgalimov-pc:24941] Failing at address: 0x556588ad919e
+[esgalimov-pc:24939] *** Process received signal ***
+[esgalimov-pc:24939] Signal: Segmentation fault (11)
+[esgalimov-pc:24939] Signal code: Address not mapped (1)
+[esgalimov-pc:24939] Failing at address: 0x558ac2c08809
+[esgalimov-pc:24940] *** Process received signal ***
+[esgalimov-pc:24940] Signal: Segmentation fault (11)
+[esgalimov-pc:24940] Signal code: Address not mapped (1)
+[esgalimov-pc:24940] Failing at address: 0x562442b7614d
+[esgalimov-pc:24938] *** Process received signal ***
+[esgalimov-pc:24938] Signal: Segmentation fault (11)
+[esgalimov-pc:24938] Signal code: Address not mapped (1)
+[esgalimov-pc:24938] Failing at address: 0x56025a162d3f
+[esgalimov-pc:24939] [ 0] [esgalimov-pc:24938] [ 0] [esgalimov-pc:24940] [ 0] [esgalimov-pc:24941] [ 0] /lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7fc1e5268520]
+[esgalimov-pc:24939] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7f4ac9ac0520]
+[esgalimov-pc:24940] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7fca312da520]
+[esgalimov-pc:24938] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7f3454a55520]
+[esgalimov-pc:24941] [ 1] /lib/x86_64-linux-gnu/libc.so.6(free+0x1e)[0x7fc1e52cb3fe]
+[esgalimov-pc:24939] [ 2] ./build/cond_counter(+0x6335)[0x558f99824335]
+[esgalimov-pc:24939] [ 3] ./build/cond_counter(+0x359a)[0x558f9982159a]
+[esgalimov-pc:24939] [ 4] /lib/x86_64-linux-gnu/libc.so.6(free+0x1e)[0x7f4ac9b233fe]
+[esgalimov-pc:24940] [ 2] ./build/cond_counter(+0x6335)[0x5621208b1335]
+[esgalimov-pc:24940] [ 3] ./build/cond_counter(+0x359a)[0x5621208ae59a]
+[esgalimov-pc:24940] [ 4] /lib/x86_64-linux-gnu/libc.so.6(free+0x1e)[0x7fca3133d3fe]
+[esgalimov-pc:24938] [ 2] ./build/cond_counter(+0x6335)[0x560739962335]
+[esgalimov-pc:24938] [ 3] ./build/cond_counter(+0x359a)[0x56073995f59a]
+[esgalimov-pc:24938] [ 4] /lib/x86_64-linux-gnu/libc.so.6(free+0x1e)[0x7f3454ab83fe]
+[esgalimov-pc:24941] [ 2] ./build/cond_counter(+0x6335)[0x5560dc9be335]
+[esgalimov-pc:24941] [ 3] ./build/cond_counter(+0x359a)[0x5560dc9bb59a]
+[esgalimov-pc:24941] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x45495)[0x7fc1e526b495]
+[esgalimov-pc:24939] [ 5] /lib/x86_64-linux-gnu/libc.so.6(+0x45495)[0x7f4ac9ac3495]
+[esgalimov-pc:24940] [ 5] /lib/x86_64-linux-gnu/libc.so.6(+0x45495)[0x7fca312dd495]
+[esgalimov-pc:24938] [ 5] /lib/x86_64-linux-gnu/libc.so.6(+0x45495)[0x7f3454a58495]
+[esgalimov-pc:24941] [ 5] /lib/x86_64-linux-gnu/libc.so.6(on_exit+0x0)[0x7fc1e526b610]
+[esgalimov-pc:24939] [ 6] /lib/x86_64-linux-gnu/libc.so.6(on_exit+0x0)[0x7f4ac9ac3610]
+[esgalimov-pc:24940] [ 6] /lib/x86_64-linux-gnu/libc.so.6(on_exit+0x0)[0x7f3454a58610]
+[esgalimov-pc:24941] [ 6] /lib/x86_64-linux-gnu/libc.so.6(on_exit+0x0)[0x7fca312dd610]
+[esgalimov-pc:24938] [ 6] /lib/x86_64-linux-gnu/libc.so.6(+0x29d97)[0x7fc1e524fd97]
+[esgalimov-pc:24939] [ 7] /lib/x86_64-linux-gnu/libc.so.6(+0x29d97)[0x7f4ac9aa7d97]
+[esgalimov-pc:24940] [ 7] /lib/x86_64-linux-gnu/libc.so.6(+0x29d97)[0x7f3454a3cd97]
+[esgalimov-pc:24941] [ 7] /lib/x86_64-linux-gnu/libc.so.6(+0x29d97)[0x7fca312c1d97]
+[esgalimov-pc:24938] [ 7] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80)[0x7fc1e524fe40]
+[esgalimov-pc:24939] [ 8] ./build/cond_counter(+0x33d5)[0x558f998213d5]
+[esgalimov-pc:24939] *** End of error message ***
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80)[0x7f4ac9aa7e40]
+[esgalimov-pc:24940] [ 8] ./build/cond_counter(+0x33d5)[0x5621208ae3d5]
+[esgalimov-pc:24940] *** End of error message ***
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80)[0x7f3454a3ce40]
+[esgalimov-pc:24941] [ 8] ./build/cond_counter(+0x33d5)[0x5560dc9bb3d5]
+[esgalimov-pc:24941] *** End of error message ***
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80)[0x7fca312c1e40]
+[esgalimov-pc:24938] [ 8] ./build/cond_counter(+0x33d5)[0x56073995f3d5]
+[esgalimov-pc:24938] *** End of error message ***
+--------------------------------------------------------------------------
+prterun noticed that process rank 0 with PID 24938 on node esgalimov-pc exited on
+signal 11 (Segmentation fault).
+--------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/esgalimov/Documents/par_prog/pp_tasks/draw.py", line 24, in <module>
+    k = [i for i in range(len(lines[0]))]
+IndexError: list index out of range

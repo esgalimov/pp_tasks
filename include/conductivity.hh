@@ -9,14 +9,21 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <cstring>
 
-constexpr double EPS = 0.00000001;
+#include "diff.h"
+
+constexpr double EPSILON = 0.00000001;
 constexpr int ALIGNMENT = 12;
 constexpr int DEFAULT_TAG     = 0;
 
 
 namespace thermal_conductivity {
 class thermal_conductivity_solver_t final {
+
+    expr_t* expr_time = nullptr;
+    expr_t* expr_coord = nullptr;
+    expr_t* expr_heterogeneity = nullptr;
 
     int rank = 0;
     int size = 0;
@@ -36,13 +43,14 @@ class thermal_conductivity_solver_t final {
     int curr_step = 1;
 
     void get_time_initial_func() {
+        int i = 0;
         if (rank == 0)
-            for (auto& vec : points) vec[0] = 1;
+            for (auto& vec : points) vec[0] = (i++) * tau;
     }
 
-    void get_coord_initial_func() {}
+    void get_coord_initial_func() {
 
-    void get_heterogeneity_func() {}
+    }
 
     void process_single_step() {
         for (int i = 1; i < n_h - 1; ++i) 
@@ -147,8 +155,8 @@ class thermal_conductivity_solver_t final {
 
         if (n_tau_all < 1 || n_h_all / size < 4) 
             throw std::runtime_error("n_h / size must be bigger than 4, n_tau must be bigger than 0");
-        if (tau < EPS || h < EPS)
-            throw std::runtime_error("tau, h must be bigger than EPS = 0.00000001");
+        if (tau < EPSILON || h < EPSILON)
+            throw std::runtime_error("tau, h must be bigger than EPSILON = 0.00000001");
 
         #ifdef DEBUG
         points.resize(++n_tau_all);
@@ -161,6 +169,13 @@ class thermal_conductivity_solver_t final {
         
         for (auto& vec : points) vec.resize(n_h);
 
+        
+        expr_time = expr_ctor("./expr_time.txt");
+        expr_coord = expr_ctor("./expr_coord.txt");
+        expr_heterogeneity = expr_ctor("./expr_heterogeneity.txt");
+
+        check_exprs();
+
         get_time_initial_func();
         get_coord_initial_func();
     }
@@ -169,6 +184,30 @@ class thermal_conductivity_solver_t final {
         if (size == 1) process_on_single_node();
         else           process_on_multiple_nodes();
         
+    }
+
+    void check_exprs() {
+        if (expr_coord->var_cnt > 1 || (expr_coord->var_cnt == 1 && std::strcmp(expr_coord->vars[0]->name, "x"))) {
+            expr_dtor(expr_coord);
+            throw std::runtime_error("ERROR: get_coord_initial_func: Must be only one var - x, or const\n");
+        }
+
+        if (expr_time->var_cnt > 1 || (expr_time->var_cnt == 1 && std::strcmp(expr_time->vars[0]->name, "t"))) {
+            expr_dtor(expr_time);
+            throw std::runtime_error("ERROR: time_initial_func: Must be only one var - t, or const\n");
+        }
+
+        if (expr_heterogeneity->var_cnt > 2 || 
+           (expr_heterogeneity->var_cnt == 1 && 
+           (std::strcmp(expr_heterogeneity->vars[0]->name, "t") || std::strcmp(expr_heterogeneity->vars[0]->name, "x"))) ||
+
+            (expr_heterogeneity->var_cnt == 2 && 
+            ((std::strcmp(expr_heterogeneity->vars[0]->name, "t") && std::strcmp(expr_heterogeneity->vars[1]->name, "x")) || 
+             (std::strcmp(expr_heterogeneity->vars[0]->name, "x") && std::strcmp(expr_heterogeneity->vars[1]->name, "t"))))) {
+
+            expr_dtor(expr_heterogeneity);
+            throw std::runtime_error("ERROR: heterogeneity_func: Must be func of x and(or) t, or const\n");
+        }
     }
 
     void dump_res_private(std::ostream& os) const {
@@ -223,6 +262,10 @@ public:
 
     ~thermal_conductivity_solver_t() {
         if (size != 0) MPI_Finalize();
+
+        expr_dtor(expr_time);
+        expr_dtor(expr_coord);
+        expr_dtor(expr_heterogeneity);
     }
 };
 
