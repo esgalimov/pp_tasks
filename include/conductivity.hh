@@ -15,15 +15,24 @@
 
 constexpr double EPSILON = 0.00000001;
 constexpr int ALIGNMENT = 12;
-constexpr int DEFAULT_TAG     = 0;
+constexpr int DEFAULT_TAG = 0;
+constexpr int NOT_USED = -1;
 
 
 namespace thermal_conductivity {
 class thermal_conductivity_solver_t final {
 
+    struct heterogeneity_helper_t {
+        int x = NOT_USED;
+        int t = NOT_USED;
+        double eval_no_consts = 0.0;
+    };
+
     expr_t* expr_time = nullptr;
     expr_t* expr_coord = nullptr;
     expr_t* expr_heterogeneity = nullptr;
+
+    heterogeneity_helper_t hh = {};
 
     int rank = 0;
     int size = 0;
@@ -44,12 +53,33 @@ class thermal_conductivity_solver_t final {
 
     void get_time_initial_func() {
         int i = 0;
-        if (rank == 0)
-            for (auto& vec : points) vec[0] = (i++) * tau;
+        if (rank == 0) {
+            if (expr_time->var_cnt == 0) {
+                double res = eval_var(expr_time->tree->root, expr_time);
+                for (auto& vec : points) vec[0] = res;
+
+                return;
+            }
+            for (auto& vec : points) { 
+                expr_time->vars[0]->value = (i++) * tau;
+                vec[0] = eval_var(expr_time->tree->root, expr_time);
+            }
+        }
     }
 
     void get_coord_initial_func() {
+        int i = rank * (n_h_all / size);
+        
+        if (expr_coord->var_cnt == 0) {
+            double res = eval_var(expr_coord->tree->root, expr_coord);
+            for (auto& elem : points[0]) elem = res;
 
+            return;
+        }
+        for (auto& elem : points[0]) {
+            expr_coord->vars[0]->value = (i++) * h;
+            elem = eval_var(expr_coord->tree->root, expr_coord);
+        }
     }
 
     void process_single_step() {
@@ -64,15 +94,25 @@ class thermal_conductivity_solver_t final {
         }
     }
 
-    double get_curr_heterogeneity(int i) {
-        return 0;
+    double get_curr_heterogeneity(int step, int i) {
+        if (hh.t == NOT_USED && hh.x == NOT_USED) {
+            return hh.eval_no_consts;
+        }
+        if (hh.t != NOT_USED) {
+            expr_heterogeneity->vars[hh.t]->value = step * tau;
+        }
+        if (hh.x != NOT_USED) {
+            expr_heterogeneity->vars[hh.x]->value = i * h;
+        }
+
+        return eval_var(expr_heterogeneity->tree->root, expr_heterogeneity);
     }
 
     void process_single_iter(double prev, double next, int i) {
         double deriv1 = (prev - next) * tau / (2 * h);
         double deriv2 = (next - 2 * points[curr_step - 1][i] + prev) * tau * tau / (2 * h * h);
 
-        points[curr_step][i] = points[curr_step - 1][i] + tau * get_curr_heterogeneity(i) + deriv1 + deriv2;
+        points[curr_step][i] = points[curr_step - 1][i] + tau * get_curr_heterogeneity(curr_step - 1, i) + deriv1 + deriv2;
     }
 
     void process_single_step_on_non_outermost_node() {
@@ -176,8 +216,8 @@ class thermal_conductivity_solver_t final {
 
         check_exprs();
 
-        get_time_initial_func();
         get_coord_initial_func();
+        get_time_initial_func();
     }
 
     void process_steps_private() {
@@ -197,17 +237,23 @@ class thermal_conductivity_solver_t final {
             throw std::runtime_error("ERROR: time_initial_func: Must be only one var - t, or const\n");
         }
 
-        if (expr_heterogeneity->var_cnt > 2 || 
-           (expr_heterogeneity->var_cnt == 1 && 
-           (std::strcmp(expr_heterogeneity->vars[0]->name, "t") || std::strcmp(expr_heterogeneity->vars[0]->name, "x"))) ||
-
-            (expr_heterogeneity->var_cnt == 2 && 
-            ((std::strcmp(expr_heterogeneity->vars[0]->name, "t") && std::strcmp(expr_heterogeneity->vars[1]->name, "x")) || 
-             (std::strcmp(expr_heterogeneity->vars[0]->name, "x") && std::strcmp(expr_heterogeneity->vars[1]->name, "t"))))) {
-
-            expr_dtor(expr_heterogeneity);
-            throw std::runtime_error("ERROR: heterogeneity_func: Must be func of x and(or) t, or const\n");
+        if (expr_heterogeneity->var_cnt == 0) { 
+            hh.eval_no_consts = eval_var(expr_heterogeneity->tree->root, expr_heterogeneity);
+            return; 
         }
+        else if (expr_heterogeneity->var_cnt == 1) {
+            if (!std::strcmp(expr_heterogeneity->vars[0]->name, "t")) { hh.t = 0; return; }
+            if (!std::strcmp(expr_heterogeneity->vars[0]->name, "x")) { hh.x = 0; return; }
+        }
+        else if (expr_heterogeneity->var_cnt == 2) {
+            if (!std::strcmp(expr_heterogeneity->vars[0]->name, "t") && !std::strcmp(expr_heterogeneity->vars[1]->name, "x")) {
+                hh.t = 0; hh.x = 1; return;
+            }
+            if (!std::strcmp(expr_heterogeneity->vars[1]->name, "t") && !std::strcmp(expr_heterogeneity->vars[0]->name, "x")) {
+                hh.t = 1; hh.x = 0; return;
+            }
+        }
+        throw std::runtime_error("ERROR: heterogeneity_func: Must be func of x and(or) t, or const\n");
     }
 
     void dump_res_private(std::ostream& os) const {
