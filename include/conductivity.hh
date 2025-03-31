@@ -112,7 +112,7 @@ class thermal_conductivity_solver_t final {
         double deriv1 = (prev - next) * tau / (2 * h);
         double deriv2 = (next - 2 * points[curr_step - 1][i] + prev) * tau * tau / (2 * h * h);
 
-        points[curr_step][i] = points[curr_step - 1][i] + tau * get_curr_heterogeneity(curr_step - 1, i) + deriv1 + deriv2;
+        points[curr_step][i] = points[curr_step - 1][i] + tau * get_curr_heterogeneity(n_tau_all - n_tau - 1, i) + deriv1 + deriv2;
     }
 
     void process_single_step_on_non_outermost_node() {
@@ -177,6 +177,11 @@ class thermal_conductivity_solver_t final {
             curr_step++;
         #else
             points[0].swap(points[1]);
+
+            if (expr_time->var_cnt == 1) 
+                expr_time->vars[0]->value = tau * (n_tau_all - n_tau - 1);
+
+            points[1][0] = eval_var(expr_time->tree->root, expr_time);
         #endif
     }
 
