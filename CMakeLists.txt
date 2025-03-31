@@ -18,6 +18,7 @@ endif()
 
 add_executable(pi_counter ${CMAKE_CURRENT_SOURCE_DIR}/pi_main.cc)
 add_executable(cond_counter ${CMAKE_CURRENT_SOURCE_DIR}/cond_main.cc)
+add_executable(connect_time ${CMAKE_CURRENT_SOURCE_DIR}/connect_time.cc)
 
 target_sources(cond_counter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/differentiator/source/diff.cpp)
 target_sources(cond_counter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/differentiator/source/expr.cpp)
